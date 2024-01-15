@@ -1,0 +1,153 @@
+<style>
+    .ground {
+        position: absolute;
+        bottom: 40px; /* Adjust this value to position the line */
+        left: 0;
+        width: 100%;
+        border-top: 2px solid black; /* This creates the line */
+    }
+
+    .dinosaur {
+        position: absolute;
+        bottom: 34px; /* Position the dinosaur on the line */
+        left: 10px; /* Position the dinosaur at the start of the line */
+        font-size: 30px; /* Adjust the size of the dinosaur */
+        transform: scaleX(-1); /* Flip the dinosaur horizontally */
+        z-index: 1; /* Make the dinosaur appear in front of the tree */
+    }
+
+    #dinosaur {
+        transition: bottom 0.5s ease;
+    }
+
+    .treeOnTheRoad {
+        position: absolute;
+        right: -50px; /* Start the tree off the screen */
+        bottom: 38px; /* Position the tree on the line */
+        font-size: 30px; /* Adjust the size of the tree */
+        animation: moveTree 3s linear infinite; /* Animate the tree */
+        animation-name: "moveTree";
+    }
+
+    @keyframes moveTree {
+        from { right: -50px; }
+        to { right: 100%; }
+    }
+
+    #restartButton {
+        position: absolute; /* Position the button absolutely */
+        bottom: 5px; /* Position the button above the ground line */
+        left: 50%; /* Center the button horizontally */
+        transform: translateX(-50%); /* Center the button horizontally */
+        display: none;
+        font-size: 20px;
+        padding: 5px 10px;
+        color: white;
+        background-color: #cbcbcb;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    #restartButton:hover {
+        background-color: #0056b3;
+    }
+
+    #restartButton:active {
+        background-color: #003d80;
+    }
+
+    #score {
+        position: absolute; /* Position the score absolutely */
+        top: 10px; /* Position the score from the top */
+        right: 10px; /* Position the score from the right */
+        font-size: 20px; /* Adjust the size of the score */
+    }
+</style>
+
+<div class="ground"></div>
+<div class="dinosaur" id="dinosaur">🦖</div>
+<div class="treeOnTheRoad" id="treeOnTheRoad">🌳</div>
+<div id="gameOver" style="display: none; font-size: 30px; text-align: center;">Game Over</div>
+<button id="restartButton" style="display: none;">Restart</button>
+<div id="score">Score: 0</div>
+
+<script>
+    var isGameOver = false;
+    var score = 0;
+
+    var scoreInterval;
+
+    var isJumping = false;
+
+    var dinosaur = document.getElementById('dinosaur');
+    var tree = document.getElementById('treeOnTheRoad');
+    var gameOver = document.getElementById('gameOver');
+    var scoreElement = document.getElementById('score');
+
+    window.addEventListener('keydown', function(event) {
+        if (event.code === 'Space' && !isGameOver && !isJumping) {
+            isJumping = true;
+            dinosaur.style.bottom = '100px';
+            setTimeout(function() {
+                dinosaur.style.bottom = '34px';
+                isJumping = false;
+            }, 500);
+
+            if (!scoreInterval) {
+                scoreInterval = setInterval(function() {
+                    var randomScore = Math.floor(Math.random() * 9) - 4 + 10; // Generate a random score between 6 and 14
+                    score += randomScore;
+                    scoreElement.textContent = 'Score: ' + score;
+                }, 100); // Increase the score every 0.5 second
+            }
+        }
+    });
+
+    function checkCollision() {
+        var dinosaurRect = dinosaur.getBoundingClientRect();
+        var treeRect = tree.getBoundingClientRect();
+    
+        if (Math.sign(treeRect.x - (dinosaurRect.x + dinosaurRect.width)) !== 1 &&
+            Math.sign((dinosaurRect.x - treeRect.width) - treeRect.x) !== 1 &&
+            Math.sign(treeRect.y - (dinosaurRect.y + dinosaurRect.height)) !== 1 &&
+            Math.sign((dinosaurRect.y - treeRect.height) - treeRect.y) !== 1) {
+            // Collision detected
+            gameOver.style.display = 'block';
+            tree.style.animationPlayState = 'paused'; // This line pauses the animation
+            clearInterval(collisionInterval); // This line stops the interval
+            clearInterval(scoreInterval); // This line stops the score interval
+            document.getElementById('restartButton').style.display = 'block'; // Show the restart button
+            isGameOver = true;
+        }
+    }
+    
+    var collisionInterval = setInterval(checkCollision, 100);
+    
+    document.getElementById('restartButton').addEventListener('click', function() {
+        // Reset the game state
+        gameOver.style.display = 'none';
+        tree.style.animationPlayState = 'running'; // Resume the animation
+        document.getElementById('restartButton').style.display = 'none'; // Hide the restart button
+        isGameOver = false;
+    
+        // Reset the tree position
+        tree.classList.remove('treeOnTheRoad'); 
+        void tree.offsetWidth; 
+        tree.classList.add('treeOnTheRoad');
+    
+        // Clear the previous interval
+        clearInterval(collisionInterval);
+
+        // Reset the score
+        score = 0;
+        scoreElement.innerHTML = 'Score: ' + score;
+        clearInterval(scoreInterval); // This line stops the score interval
+        scoreInterval = null;
+    
+        // Start the collision detection interval again
+        collisionInterval = setInterval(checkCollision, 100);
+    });
+
+</script>
